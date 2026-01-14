@@ -6,14 +6,19 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		19C8150A2F16D6D90002783B /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 19C815092F16D6D90002783B /* UIKit.framework */; platformFilters = (ios, xros, ); };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
-		19C814F32F16D4BB0002783B /* Sortt AI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Sortt AI.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		19C814F32F16D4BB0002783B /* VisionAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VisionAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		19C815092F16D6D90002783B /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/UIKit.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		19C814F52F16D4BB0002783B /* Sortt AI */ = {
+		19C814F52F16D4BB0002783B /* VisionAI */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Sortt AI";
+			path = VisionAI;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -23,6 +28,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				19C8150A2F16D6D90002783B /* UIKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -32,7 +38,8 @@
 		19C814EA2F16D4BB0002783B = {
 			isa = PBXGroup;
 			children = (
-				19C814F52F16D4BB0002783B /* Sortt AI */,
+				19C814F52F16D4BB0002783B /* VisionAI */,
+				19C815082F16D6D90002783B /* Frameworks */,
 				19C814F42F16D4BB0002783B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -40,17 +47,25 @@
 		19C814F42F16D4BB0002783B /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				19C814F32F16D4BB0002783B /* Sortt AI.app */,
+				19C814F32F16D4BB0002783B /* VisionAI.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		19C815082F16D6D90002783B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				19C815092F16D6D90002783B /* UIKit.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		19C814F22F16D4BB0002783B /* Sortt AI */ = {
+		19C814F22F16D4BB0002783B /* VisionAI */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 19C814FE2F16D4BB0002783B /* Build configuration list for PBXNativeTarget "Sortt AI" */;
+			buildConfigurationList = 19C814FE2F16D4BB0002783B /* Build configuration list for PBXNativeTarget "VisionAI" */;
 			buildPhases = (
 				19C814EF2F16D4BB0002783B /* Sources */,
 				19C814F02F16D4BB0002783B /* Frameworks */,
@@ -61,13 +76,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				19C814F52F16D4BB0002783B /* Sortt AI */,
+				19C814F52F16D4BB0002783B /* VisionAI */,
 			);
-			name = "Sortt AI";
+			name = VisionAI;
 			packageProductDependencies = (
 			);
 			productName = "Sortt AI";
-			productReference = 19C814F32F16D4BB0002783B /* Sortt AI.app */;
+			productReference = 19C814F32F16D4BB0002783B /* VisionAI.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -85,7 +100,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 19C814EE2F16D4BB0002783B /* Build configuration list for PBXProject "Sortt AI" */;
+			buildConfigurationList = 19C814EE2F16D4BB0002783B /* Build configuration list for PBXProject "VisionAI" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -99,7 +114,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				19C814F22F16D4BB0002783B /* Sortt AI */,
+				19C814F22F16D4BB0002783B /* VisionAI */,
 			);
 		};
 /* End PBXProject section */
@@ -254,6 +269,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "The camera is used to describe what the device sees using on-device AI.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -298,6 +314,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "The camera is used to describe what the device sees using on-device AI.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -332,7 +349,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		19C814EE2F16D4BB0002783B /* Build configuration list for PBXProject "Sortt AI" */ = {
+		19C814EE2F16D4BB0002783B /* Build configuration list for PBXProject "VisionAI" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				19C814FC2F16D4BB0002783B /* Debug */,
@@ -341,7 +358,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		19C814FE2F16D4BB0002783B /* Build configuration list for PBXNativeTarget "Sortt AI" */ = {
+		19C814FE2F16D4BB0002783B /* Build configuration list for PBXNativeTarget "VisionAI" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				19C814FF2F16D4BB0002783B /* Debug */,
