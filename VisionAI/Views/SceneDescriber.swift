@@ -55,28 +55,12 @@ final class SceneDescriber {
     
     // MARK: - 血壓計專用（已優化）
     func describeBP(image: UIImage, vlmManager: VLMManager) async throws -> String {
+        // 極度簡化的 Prompt，降低 input tokens 以提升推論速度
         let prompt = """
-        You are an expert OCR system specialized in reading 7-segment LCD displays on medical devices.
-        Look closely at the screen of the blood pressure monitor in the image.
-
-        CRITICAL INSTRUCTIONS:
-        1. The numbers are written in a 7-segment digital font. Pay close attention to the shape of 3, 6, 8, and 9.
-        2. DO NOT guess, infer, or round numbers.
-        3. Extract the top large number as SYS.
-        4. Extract the middle large number as DIA.
-        5. Extract the bottom small number as PUL.
-        
-        Before outputting the final JSON, think step-by-step internally:
-        - What are the individual digits visible in the top row?
-        - What are the individual digits visible in the middle row?
-        - What are the individual digits visible in the bottom row?
-        
-        Then, output ONLY a valid JSON object matching this schema. Do not include your internal thinking in the output, only the JSON.
-        {
-          "SYS": number,
-          "DIA": number,
-          "PUL": number
-        }
+        Read the 7-segment digital numbers on the blood pressure monitor.
+        Think step-by-step to avoid confusing 3, 6, 8, 9.
+        Output ONLY a JSON object:
+        {"SYS": number, "DIA": number, "PUL": number}
         """
         
         let response = try await vlmManager.generate(image: image, prompt: prompt)
