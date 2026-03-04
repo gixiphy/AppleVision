@@ -10,6 +10,7 @@ import AVFoundation
 
 struct ContentView: View {
     @StateObject private var camera = CameraManager()
+    @StateObject private var vlmManager = VLMManager()
     @State private var description = ""
     @State private var isLoading = false
 
@@ -28,6 +29,11 @@ struct ContentView: View {
                         .padding()
                         .background(.ultraThinMaterial)
                         .cornerRadius(12)
+                } else if !vlmManager.isModelLoaded {
+                    ProgressView("Loading VLM Model...")
+                        .padding()
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(12)
                 }
 
                 Text(description)
@@ -37,22 +43,28 @@ struct ContentView: View {
                     .cornerRadius(12)
                     .padding()
 
-                Button("Describe Scene") {
+                Button("Read Blood Pressure") {
                     Task {
                         isLoading = true
                         if let image = await camera.capturePhoto() {
-                            description = (try? await describer.describe(image: image))
-                                ?? "Unable to describe scene."
+//                            description = (try? await describer.describe(image: image))
+//                                ?? "Unable to describe scene."
+                            description = (try? await describer.describeBP(image: image, vlmManager: vlmManager))
+                                ?? "Unable to read blood pressure."
                         }
                         isLoading = false
                     }
                 }
+                .disabled(!vlmManager.isModelLoaded)
                 .buttonStyle(.glass)
                 .controlSize(.large)
                 .padding(.bottom, 40)
             }
         }
-        .onAppear { camera.session.startRunning() }
+        .onAppear { 
+            camera.session.startRunning() 
+            Task { try? await vlmManager.loadModel() }
+        }
         .onDisappear { camera.session.stopRunning() }
     }
 }
