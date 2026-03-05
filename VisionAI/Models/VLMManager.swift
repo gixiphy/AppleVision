@@ -42,9 +42,11 @@ final class VLMManager: ObservableObject {
                 fraction = min(max(progress.fractionCompleted, 0.0), 1.0)
             }
             
+            let capturedFraction = fraction
+            
             Task { @MainActor in
                 // 如果 total <= 0，可以暫時鎖在一個安全的值或是 0
-                self.loadingProgress = fraction
+                self.loadingProgress = capturedFraction
             }
         }
         
