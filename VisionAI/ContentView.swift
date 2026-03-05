@@ -72,7 +72,15 @@ struct ContentView: View {
         }
         .onAppear { 
             camera.session.startRunning() 
-            Task { try? await vlmManager.loadModel() }
+            Task { 
+                do {
+                    try await vlmManager.loadModel()
+                } catch {
+                    print("❌ 模型載入失敗：\(error)")
+                    // 如果發生錯誤，顯示在 UI 上，避免無限轉圈圈
+                    description = "模型載入失敗：\(error.localizedDescription)"
+                }
+            }
         }
         .onDisappear { camera.session.stopRunning() }
     }

@@ -28,12 +28,13 @@ final class VLMManager: ObservableObject {
     func loadModel() async throws {
         guard !isModelLoaded else { return }
         
-        print("開始載入 MLX VLM 模型：\(modelConfiguration.name)...")
+        print("開始載入 模型：\(modelConfiguration.name)...")
         
         // 透過 Hub 下載並初始化模型。這步驟在第一次執行時會需要下載約 1.5GB 的檔案
         let container = try await VLMModelFactory.shared.loadContainer(
             configuration: modelConfiguration
         ) { progress in
+            print("載入中 模型：\(progress)")
             // 處理 URLSession 潛在的 Edge Cases (例如 totalUnitCount 為未知狀態 -1，或下載量超標)
             let total = progress.totalUnitCount
             var fraction = 0.0
