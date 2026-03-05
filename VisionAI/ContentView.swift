@@ -30,10 +30,19 @@ struct ContentView: View {
                         .background(.ultraThinMaterial)
                         .cornerRadius(12)
                 } else if !vlmManager.isModelLoaded {
-                    ProgressView("Loading VLM Model...")
-                        .padding()
-                        .background(.ultraThinMaterial)
-                        .cornerRadius(12)
+                    VStack {
+                        ProgressView("Loading VLM Model...")
+                        ProgressView(value: vlmManager.loadingProgress)
+                            .progressViewStyle(.linear)
+                            .frame(width: 200)
+                            .padding(.top, 4)
+                        Text("\(Int(vlmManager.loadingProgress * 100))%")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(12)
                 }
 
                 Text(description)

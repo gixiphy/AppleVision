@@ -14,12 +14,14 @@ final class VLMManager: ObservableObject {
     
     private var modelContainer: ModelContainer?
     
-    // 定義我們要使用的模型：Qwen2-VL 2B (4-bit 量化版本，適合 iOS)
-    private let modelConfiguration = VLMRegistry.qwen2VL2BInstruct4Bit
+    // 定義我們要使用的模型：手動指定 Qwen3.5 0.8B (4-bit 量化版本，極度輕量快速)
+    private let modelConfiguration = ModelConfiguration(
+        id: "mlx-community/Qwen3.5-0.8B-MLX-4bit"
+    )
     
     init() {
-        // 提高 GPU 快取上限，加速連續推論時的記憶體分配速度 (從 20MB 提高到 256MB)
-        MLX.GPU.set(cacheLimit: 256 * 1024 * 1024)
+        // 提高快取上限，加速連續推論時的記憶體分配速度 (256MB)
+        MLX.Memory.cacheLimit = 256 * 1024 * 1024
     }
     
     /// 下載並載入模型到記憶體中
@@ -31,7 +33,11 @@ final class VLMManager: ObservableObject {
         // 透過 Hub 下載並初始化模型。這步驟在第一次執行時會需要下載約 1.5GB 的檔案
         let container = try await VLMModelFactory.shared.loadContainer(
             configuration: modelConfiguration
-        )
+        ) { progress in
+            Task { @MainActor in
+                self.loadingProgress = progress.fractionCompleted
+            }
+        }
         
         self.modelContainer = container
         self.isModelLoaded = true
@@ -101,9 +107,7 @@ final class VLMManager: ObservableObject {
         let userInput = UserInput(
             chat: chat
         )
-        
-        var generatedText = ""
-        
+                
         print("🧠 開始 VLM 推論...")
         
         // 3. 執行推論
