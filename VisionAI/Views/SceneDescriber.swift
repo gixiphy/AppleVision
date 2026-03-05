@@ -54,10 +54,9 @@ final class SceneDescriber {
     }
     
     // MARK: - 血壓計專用（已優化）
-    func describeBP(image: UIImage, vlmManager: VLMManager, onStatusUpdate: (@Sendable (String) -> Void)? = nil) async throws -> String {
+    func describeBP(image: UIImage, vlmManager: VLMManager, onStatusUpdate: (@Sendable (String) -> Void)? = nil) async throws -> BloodPressureReading {
         onStatusUpdate?("📐 Resizing image...")
         
-        // 極度簡化的 Prompt，降低 input tokens 以提升推論速度
         let prompt = """
         Read the 7-segment digital numbers on the blood pressure monitor.
         Think step-by-step to avoid confusing 3, 6, 8, 9.
@@ -70,14 +69,20 @@ final class SceneDescriber {
         
         print("🤖 VLM raw response: \(response)")
         
-        // 嘗試清理模型可能產生的多餘 markdown 標籤或思考過程
         var cleanResponse = response
         if let jsonStart = cleanResponse.firstIndex(of: "{"),
            let jsonEnd = cleanResponse.lastIndex(of: "}") {
             cleanResponse = String(cleanResponse[jsonStart...jsonEnd])
         }
         
-        return cleanResponse
+        guard let data = cleanResponse.data(using: .utf8) else {
+            throw NSError(domain: "SceneDescriber", code: 1, userInfo: [NSLocalizedDescriptionKey: "無法解析 JSON"])
+        }
+        
+        let decoder = JSONDecoder()
+        let reading = try decoder.decode(BloodPressureReading.self, from: data)
+        
+        return reading
     }
     
     // MARK: - 純 OCR（保留你原本最穩定的設定）
@@ -102,9 +107,7 @@ final class SceneDescriber {
 
 // MARK: - 結構化回應（直接對應到你的 VitalSigns）
 struct BloodPressureReading: Codable {
-    var large1: Int?      // 通常是 SYS（較大值）
-    var large2: Int?      // 通常是 DIA
-    var small: Int?       // 通常是 PUL
-    var units: String?
-    var description: String = ""
+    var SYS: Int?      // 通常是 SYS（較大值）
+    var DIA: Int?      // 通常是 DIA
+    var PUL: Int?      // 通常是 PUL
 }

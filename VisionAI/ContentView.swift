@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var description = ""
     @State private var statusMessage = ""
     @State private var isLoading = false
+    @State private var bpReading: BloodPressureReading?
 
     let describer = SceneDescriber()
 
@@ -75,7 +76,41 @@ struct ContentView: View {
                     .cornerRadius(12)
                 }
 
-                if !description.isEmpty {
+                if let reading = bpReading {
+                    HStack(spacing: 30) {
+                        VStack {
+                            Text("SYS:")
+                                .font(.headline)
+                            Text("\(reading.SYS ?? 0)")
+                                .font(.title)
+                                .fontWeight(.bold)
+                            Text("mmHg")
+                                .font(.caption)
+                        }
+                        VStack {
+                            Text("DIA:")
+                                .font(.headline)
+                            Text("\(reading.DIA ?? 0)")
+                                .font(.title)
+                                .fontWeight(.bold)
+                            Text("mmHg")
+                                .font(.caption)
+                        }
+                        VStack {
+                            Text("PUL:")
+                                .font(.headline)
+                            Text("\(reading.PUL ?? 0)")
+                                .font(.title)
+                                .fontWeight(.bold)
+                            Text("bpm")
+                                .font(.caption)
+                        }
+                    }
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(12)
+                    .padding()
+                } else if !description.isEmpty {
                     Text(description)
                         .font(.callout)
                         .padding()
@@ -89,16 +124,20 @@ struct ContentView: View {
                         await MainActor.run {
                             isLoading = true
                             statusMessage = "📸 Capturing image..."
+                            bpReading = nil
                             description = ""
                         }
                         if let image = await camera.capturePhoto() {
                             await MainActor.run { statusMessage = "🧠 Analyzing with AI..." }
-                            let result = (try? await describer.describeBP(image: image, vlmManager: vlmManager, onStatusUpdate: { status in
+                            if let result = try? await describer.describeBP(image: image, vlmManager: vlmManager, onStatusUpdate: { status in
                                 Task { @MainActor in
                                     statusMessage = status
                                 }
-                            })) ?? "Unable to read blood pressure."
-                            await MainActor.run { description = result }
+                            }) {
+                                await MainActor.run { bpReading = result }
+                            } else {
+                                await MainActor.run { description = "Unable to read blood pressure." }
+                            }
                         }
                         await MainActor.run {
                             statusMessage = ""
