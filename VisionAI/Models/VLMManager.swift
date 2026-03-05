@@ -34,8 +34,17 @@ final class VLMManager: ObservableObject {
         let container = try await VLMModelFactory.shared.loadContainer(
             configuration: modelConfiguration
         ) { progress in
+            // 處理 URLSession 潛在的 Edge Cases (例如 totalUnitCount 為未知狀態 -1，或下載量超標)
+            let total = progress.totalUnitCount
+            var fraction = 0.0
+            
+            if total > 0 {
+                fraction = min(max(progress.fractionCompleted, 0.0), 1.0)
+            }
+            
             Task { @MainActor in
-                self.loadingProgress = progress.fractionCompleted
+                // 如果 total <= 0，可以暫時鎖在一個安全的值或是 0
+                self.loadingProgress = fraction
             }
         }
         
