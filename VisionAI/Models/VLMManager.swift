@@ -30,7 +30,7 @@ final class VLMManager: ObservableObject {
     
     @Published var isModelLoaded = false
     @Published var loadingProgress: Double = 0.0
-    @Published var selectedModel: SupportedModel = .qwen2VL2B
+    @Published var selectedModel: SupportedModel = .florence2Base
     
     private var modelContainer: ModelContainer?
     

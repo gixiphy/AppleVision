@@ -57,11 +57,34 @@ final class SceneDescriber {
     func describeBP(image: UIImage, vlmManager: VLMManager, onStatusUpdate: (@Sendable (String) -> Void)? = nil) async throws -> BloodPressureReading {
         onStatusUpdate?("📐 Resizing image...")
         
+//        let prompt = """
+//        Read the 7-segment digital numbers on the blood pressure monitor.
+//        Think step-by-step to avoid confusing 3, 6, 8, 9.
+//        Output ONLY a JSON object:
+//        {"SYS": number, "DIA": number, "PUL": number}
+//        """
         let prompt = """
-        Read the 7-segment digital numbers on the blood pressure monitor.
-        Think step-by-step to avoid confusing 3, 6, 8, 9.
-        Output ONLY a JSON object:
-        {"SYS": number, "DIA": number, "PUL": number}
+        You are an expert at reading 7-segment LCD/LED displays from blood pressure monitors.
+
+        The image shows a typical digital blood pressure meter display.
+        Focus ONLY on the three main 7-segment numeric readings:
+        - Upper/SYS (systolic, usually larger or top number)
+        - Lower/DIA (diastolic)
+        - Bottom/PUL or Pulse/Heart rate (usually smallest or with /min or bpm symbol)
+
+        Think step-by-step:
+        1. Identify the three separate numeric areas.
+        2. For each digit, carefully check which of the 7 segments are lit.
+        3. Be extra careful with similar shapes:
+           - 3 vs 8 vs 9 vs 6 vs 5
+           - 7 vs 1 vs 4
+           - 0 vs 8 vs 6 vs 9
+        4. Ignore any other text, icons, battery, date, AFIB, MAM, error symbols, cuffs, etc.
+        5. If a digit is unclear or partial, use the most likely shape.
+
+        Output ONLY valid JSON, nothing else:
+        {"SYS": integer or null, "DIA": integer or null, "PUL": integer or null}
+        Use null if cannot confidently read a value.
         """
         
         onStatusUpdate?("🤖 Running AI inference...")
