@@ -12,6 +12,7 @@ struct ContentView: View {
     @StateObject private var camera = CameraManager()
     @StateObject private var vlmManager = VLMManager()
     @State private var description = ""
+    @State private var statusMessage = ""
     @State private var isLoading = false
 
     let describer = SceneDescriber()
@@ -22,13 +23,42 @@ struct ContentView: View {
                 .ignoresSafeArea()
 
             VStack {
+                // 模型選擇器 (置頂)
+                Picker("Model", selection: $vlmManager.selectedModel) {
+                    ForEach(SupportedModel.allCases) { model in
+                        Text(model.rawValue).tag(model)
+                    }
+                }
+                .pickerStyle(.menu)
+                .padding()
+                .background(.ultraThinMaterial)
+                .cornerRadius(12)
+                .disabled(vlmManager.loadingProgress > 0 && vlmManager.loadingProgress < 1)
+                .onChange(of: vlmManager.selectedModel) { oldValue, newValue in
+                    Task {
+                        do {
+                            try await vlmManager.switchModel(to: newValue)
+                        } catch {
+                            print("❌ 模型載入失敗：\(error)")
+                            description = "模型載入失敗：\(error.localizedDescription)"
+                        }
+                    }
+                }
+                
                 Spacer()
 
                 if isLoading {
-                    ProgressView("Analyzing…")
-                        .padding()
-                        .background(.ultraThinMaterial)
-                        .cornerRadius(12)
+                    VStack(spacing: 8) {
+                        ProgressView("Analyzing…")
+                        if !statusMessage.isEmpty {
+                            Text(statusMessage)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(12)
                 } else if !vlmManager.isModelLoaded {
                     VStack {
                         ProgressView("Loading \(vlmManager.selectedModel.rawValue)...")
@@ -44,44 +74,36 @@ struct ContentView: View {
                     .background(.ultraThinMaterial)
                     .cornerRadius(12)
                 }
-                
-                Picker("Model", selection: $vlmManager.selectedModel) {
-                    ForEach(SupportedModel.allCases) { model in
-                        Text(model.rawValue).tag(model)
-                    }
-                }
-                .pickerStyle(.menu)
-                .padding()
-                .background(.ultraThinMaterial)
-                .cornerRadius(12)
-                .onChange(of: vlmManager.selectedModel) { newValue in
-                    Task {
-                        do {
-                            try await vlmManager.switchModel(to: newValue)
-                        } catch {
-                            print("❌ 模型載入失敗：\(error)")
-                            description = "模型載入失敗：\(error.localizedDescription)"
-                        }
-                    }
-                }
 
-                Text(description)
-                    .font(.callout)
-                    .padding()
-                    .background(.ultraThinMaterial)
-                    .cornerRadius(12)
-                    .padding()
+                if !description.isEmpty {
+                    Text(description)
+                        .font(.callout)
+                        .padding()
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(12)
+                        .padding()
+                }
 
                 Button("Read Blood Pressure") {
                     Task {
-                        isLoading = true
-                        if let image = await camera.capturePhoto() {
-//                            description = (try? await describer.describe(image: image))
-//                                ?? "Unable to describe scene."
-                            description = (try? await describer.describeBP(image: image, vlmManager: vlmManager))
-                                ?? "Unable to read blood pressure."
+                        await MainActor.run {
+                            isLoading = true
+                            statusMessage = "📸 Capturing image..."
+                            description = ""
                         }
-                        isLoading = false
+                        if let image = await camera.capturePhoto() {
+                            await MainActor.run { statusMessage = "🧠 Analyzing with AI..." }
+                            let result = (try? await describer.describeBP(image: image, vlmManager: vlmManager, onStatusUpdate: { status in
+                                Task { @MainActor in
+                                    statusMessage = status
+                                }
+                            })) ?? "Unable to read blood pressure."
+                            await MainActor.run { description = result }
+                        }
+                        await MainActor.run {
+                            statusMessage = ""
+                            isLoading = false
+                        }
                     }
                 }
                 .disabled(!vlmManager.isModelLoaded)

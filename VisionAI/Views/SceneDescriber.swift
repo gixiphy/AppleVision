@@ -54,7 +54,9 @@ final class SceneDescriber {
     }
     
     // MARK: - 血壓計專用（已優化）
-    func describeBP(image: UIImage, vlmManager: VLMManager) async throws -> String {
+    func describeBP(image: UIImage, vlmManager: VLMManager, onStatusUpdate: (@Sendable (String) -> Void)? = nil) async throws -> String {
+        onStatusUpdate?("📐 Resizing image...")
+        
         // 極度簡化的 Prompt，降低 input tokens 以提升推論速度
         let prompt = """
         Read the 7-segment digital numbers on the blood pressure monitor.
@@ -63,7 +65,8 @@ final class SceneDescriber {
         {"SYS": number, "DIA": number, "PUL": number}
         """
         
-        let response = try await vlmManager.generate(image: image, prompt: prompt)
+        onStatusUpdate?("🤖 Running AI inference...")
+        let response = try await vlmManager.generate(image: image, prompt: prompt, onStatusUpdate: onStatusUpdate)
         
         print("🤖 VLM raw response: \(response)")
         

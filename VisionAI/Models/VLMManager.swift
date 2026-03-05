@@ -88,10 +88,12 @@ final class VLMManager: ObservableObject {
     }
     
     /// 傳入圖片與提示詞進行多模態推論
-    func generate(image: UIImage, prompt: String) async throws -> String {
+    func generate(image: UIImage, prompt: String, onStatusUpdate: (@Sendable (String) -> Void)? = nil) async throws -> String {
         guard let container = modelContainer else {
             throw NSError(domain: "VLMManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "模型尚未載入"])
         }
+        
+        onStatusUpdate?("📐 Resizing image...")
         
         // 1. 影像預處理：調整大小、轉灰階並增加對比度，以利 OCR。
         // 將最大尺寸降至 1024px，兼顧文字清晰度與推論速度
@@ -112,6 +114,8 @@ final class VLMManager: ObservableObject {
             UIGraphicsEndImageContext()
         }
         
+        onStatusUpdate?("🖼️ Converting to grayscale...")
+        
         // 轉為灰階以增強對比 (過濾掉背景顏色干擾)
         if let currentCGImage = resizedImage.cgImage {
             let colorSpace = CGColorSpaceCreateDeviceGray()
@@ -126,6 +130,8 @@ final class VLMManager: ObservableObject {
                 }
             }
         }
+        
+        onStatusUpdate?("💾 Preparing image data...")
         
         // 改用 JPEG 0.9 壓縮，減少磁碟 I/O 耗時，且對於灰階文字幾乎無失真
         guard let imageData = resizedImage.jpegData(compressionQuality: 0.9) else {
@@ -151,7 +157,7 @@ final class VLMManager: ObservableObject {
             chat: chat
         )
                 
-        print("🧠 開始 VLM 推論...")
+        onStatusUpdate?("🧠 Running AI inference...")
         
         // 3. 執行推論
         let result = try await container.perform { context in
@@ -178,12 +184,15 @@ final class VLMManager: ObservableObject {
                     text += chunkText
                 case .info(let info):
                     print("✅ 推論完成。速度: \(String(format: "%.2f", info.tokensPerSecond)) tokens/sec")
+                    onStatusUpdate?("⚡ Speed: \(String(format: "%.1f", info.tokensPerSecond)) tokens/s")
                 default:
                     break
                 }
             }
             return text
         }
+        
+        onStatusUpdate?("✅ Analysis complete!")
         
         return result
     }
