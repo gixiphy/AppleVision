@@ -14,10 +14,8 @@ final class VLMManager: ObservableObject {
     
     private var modelContainer: ModelContainer?
     
-    // 定義我們要使用的模型：手動指定 Qwen3.5 0.8B (4-bit 量化版本，極度輕量快速)
-    private let modelConfiguration = ModelConfiguration(
-        id: "mlx-community/Qwen3.5-0.8B-MLX-4bit"
-    )
+    // 定義我們要使用的模型：Qwen2.5-VL 3B (最新的 OCR 強力模型)
+    private let modelConfiguration = VLMRegistry.qwen2_5VL3BInstruct4Bit
     
     init() {
         // 提高快取上限，加速連續推論時的記憶體分配速度 (256MB)
@@ -63,8 +61,8 @@ final class VLMManager: ObservableObject {
         }
         
         // 1. 影像預處理：調整大小、轉灰階並增加對比度，以利 OCR。
-        // 將最大尺寸降至 768px，可大幅減少 image tokens 數量，提升 30% 以上推論速度
-        let maxDimension: CGFloat = 768.0
+        // 將最大尺寸降至 1024px，兼顧文字清晰度與推論速度
+        let maxDimension: CGFloat = 1024.0
         let size = image.size
         var resizedImage = image
         
