@@ -5,32 +5,65 @@ import MLXVLM
 import UIKit
 import Combine
 
+enum SupportedModel: String, CaseIterable, Identifiable {
+    case florence2Base = "Florence-2-base-ft-4bit"
+    case florence2Large = "Florence-2-large-ft-4bit"
+    case qwen2VL2B = "Qwen2-VL-2B-Instruct-4bit"
+    
+    var id: String { self.rawValue }
+    
+    var configuration: ModelConfiguration {
+        switch self {
+        case .florence2Base:
+            return ModelConfiguration(id: "mlx-community/Florence-2-base-ft-4bit")
+        case .florence2Large:
+            return ModelConfiguration(id: "mlx-community/Florence-2-large-ft-4bit")
+        case .qwen2VL2B:
+            return VLMRegistry.qwen2VL2BInstruct4Bit
+        }
+    }
+}
+
 /// 負責管理 MLX 視覺語言模型 (VLM) 的生命週期與推論
 @MainActor
 final class VLMManager: ObservableObject {
     
     @Published var isModelLoaded = false
     @Published var loadingProgress: Double = 0.0
+    @Published var selectedModel: SupportedModel = .florence2Base
     
     private var modelContainer: ModelContainer?
-    
-    // 定義我們要使用的模型：Qwen2.5-VL 3B (最新的 OCR 強力模型)
-    private let modelConfiguration = VLMRegistry.qwen2_5VL3BInstruct4Bit
     
     init() {
         // 提高快取上限，加速連續推論時的記憶體分配速度 (256MB)
         MLX.Memory.cacheLimit = 256 * 1024 * 1024
     }
     
+    /// 切換模型並重新載入
+    func switchModel(to model: SupportedModel) async throws {
+        guard selectedModel != model || !isModelLoaded else { return }
+        
+        self.isModelLoaded = false
+        self.loadingProgress = 0.0
+        self.selectedModel = model
+        self.modelContainer = nil
+        
+        // 強制釋放舊模型記憶體
+        MLX.GPU.clearCache()
+        
+        try await loadModel()
+    }
+    
     /// 下載並載入模型到記憶體中
     func loadModel() async throws {
         guard !isModelLoaded else { return }
         
-        print("開始載入 模型：\(modelConfiguration.name)...")
+        let configuration = selectedModel.configuration
+        print("開始載入 模型：\(configuration.name)...")
         
-        // 透過 Hub 下載並初始化模型。這步驟在第一次執行時會需要下載約 1.5GB 的檔案
+        // 透過 Hub 下載並初始化模型。這步驟在第一次執行時會需要下載大檔案
         let container = try await VLMModelFactory.shared.loadContainer(
-            configuration: modelConfiguration
+            configuration: configuration
         ) { progress in
             print("載入中 模型：\(progress)")
             // 處理 URLSession 潛在的 Edge Cases (例如 totalUnitCount 為未知狀態 -1，或下載量超標)

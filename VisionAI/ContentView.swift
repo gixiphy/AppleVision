@@ -31,7 +31,7 @@ struct ContentView: View {
                         .cornerRadius(12)
                 } else if !vlmManager.isModelLoaded {
                     VStack {
-                        ProgressView("Loading VLM Model...")
+                        ProgressView("Loading \(vlmManager.selectedModel.rawValue)...")
                         ProgressView(value: vlmManager.loadingProgress)
                             .progressViewStyle(.linear)
                             .frame(width: 200)
@@ -43,6 +43,26 @@ struct ContentView: View {
                     .padding()
                     .background(.ultraThinMaterial)
                     .cornerRadius(12)
+                }
+                
+                Picker("Model", selection: $vlmManager.selectedModel) {
+                    ForEach(SupportedModel.allCases) { model in
+                        Text(model.rawValue).tag(model)
+                    }
+                }
+                .pickerStyle(.menu)
+                .padding()
+                .background(.ultraThinMaterial)
+                .cornerRadius(12)
+                .onChange(of: vlmManager.selectedModel) { newValue in
+                    Task {
+                        do {
+                            try await vlmManager.switchModel(to: newValue)
+                        } catch {
+                            print("❌ 模型載入失敗：\(error)")
+                            description = "模型載入失敗：\(error.localizedDescription)"
+                        }
+                    }
                 }
 
                 Text(description)
