@@ -7,8 +7,8 @@ import Combine
 
 enum SupportedModel: String, CaseIterable, Identifiable {
     case florence2Base = "Florence-2-base-ft-4bit"
-    case florence2Large = "Florence-2-large-ft-4bit"
     case qwen2VL2B = "Qwen2-VL-2B-Instruct-4bit"
+    case paliGemma3B = "paligemma-3b-mix-448-4bit"
     
     var id: String { self.rawValue }
     
@@ -16,10 +16,10 @@ enum SupportedModel: String, CaseIterable, Identifiable {
         switch self {
         case .florence2Base:
             return ModelConfiguration(id: "mlx-community/Florence-2-base-ft-4bit")
-        case .florence2Large:
-            return ModelConfiguration(id: "mlx-community/Florence-2-large-ft-4bit")
         case .qwen2VL2B:
             return VLMRegistry.qwen2VL2BInstruct4Bit
+        case .paliGemma3B:
+            return ModelConfiguration(id: "mlx-community/paligemma-3b-mix-448-4bit")
         }
     }
 }
