@@ -57,12 +57,6 @@ final class SceneDescriber {
     func describeBP(image: UIImage, vlmManager: VLMManager, onStatusUpdate: (@Sendable (String) -> Void)? = nil) async throws -> BloodPressureReading {
         onStatusUpdate?("📐 Resizing image...")
         
-//        let prompt = """
-//        Read the 7-segment digital numbers on the blood pressure monitor.
-//        Think step-by-step to avoid confusing 3, 6, 8, 9.
-//        Output ONLY a JSON object:
-//        {"SYS": number, "DIA": number, "PUL": number}
-//        """
         let prompt = """
         You are an expert at reading 7-segment LCD/LED displays from blood pressure monitors.
 
