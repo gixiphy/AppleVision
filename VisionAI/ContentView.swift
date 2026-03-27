@@ -124,6 +124,8 @@ struct ContentView: View {
                                         .foregroundColor(.secondary)
                                 }
                             }
+                        } else if speechRecognizer.transcribedText.isEmpty && vitalSigns == nil {
+                            VoiceInputGuide()
                         }
                         
                         if !speechRecognizer.transcribedText.isEmpty {
@@ -382,4 +384,51 @@ struct VitalSignItem: View {
 func hasAnyValue(_ vs: VitalSignsReading) -> Bool {
     return vs.SYS != nil || vs.DIA != nil || vs.PUL != nil ||
            vs.bloodSugar != nil || vs.temperature != nil || vs.spO2 != nil
+}
+
+// MARK: - Voice Input Guide (使用提示)
+struct VoiceInputGuide: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "mic.badge.plus")
+                .font(.system(size: 40))
+                .foregroundColor(.secondary)
+            
+            Text("量測時自然說出數值即可")
+                .font(.headline)
+            Text("Say vital signs naturally")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            
+            Divider().padding(.horizontal)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                GuideRow(text: "收縮壓 120，舒張壓 80，脈搏 72")
+                GuideRow(text: "體溫 36.5，血糖 98，血氧 97")
+                GuideRow(text: "SYS 120, DIA 80, PUL 72")
+            }
+            
+            Text("支援：血壓 / 血糖 / 體溫 / 血氧")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding()
+        .background(.ultraThinMaterial)
+        .cornerRadius(16)
+    }
+}
+
+struct GuideRow: View {
+    let text: String
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(Color.secondary.opacity(0.5))
+                .frame(width: 6, height: 6)
+            Text(text)
+                .font(.callout)
+                .foregroundColor(.primary)
+        }
+    }
 }
