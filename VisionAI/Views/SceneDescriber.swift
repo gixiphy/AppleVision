@@ -98,17 +98,7 @@ final class SceneDescriber {
         }
         
         let decoder = JSONDecoder()
-        var reading = try decoder.decode(BloodPressureReading.self, from: data)
-        
-        // 結果驗證：範圍檢查（與 voice mode 一致）
-        reading.SYS = validateRange(reading.SYS, min: 60, max: 250)
-        reading.DIA = validateRange(reading.DIA, min: 30, max: 150)
-        reading.PUL = validateRange(reading.PUL, min: 40, max: 200)
-        
-        // 如果所有值都不合理，拋出錯誤
-        if reading.SYS == nil && reading.DIA == nil && reading.PUL == nil {
-            throw NSError(domain: "SceneDescriber", code: 2, userInfo: [NSLocalizedDescriptionKey: "無法讀取有效的血壓數值"])
-        }
+        let reading = try decoder.decode(BloodPressureReading.self, from: data)
         
         return reading
     }
