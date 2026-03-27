@@ -60,21 +60,20 @@ final class SceneDescriber {
         let prompt = """
         You are an expert at reading 7-segment LCD/LED displays from blood pressure monitors.
 
-        The image shows a typical digital blood pressure meter display.
-        Focus ONLY on the three main 7-segment numeric readings:
-        - Upper/SYS (systolic, usually larger or top number)
-        - Lower/DIA (diastolic)
-        - Bottom/PUL or Pulse/Heart rate (usually smallest or with /min or bpm symbol)
+        The display layout from top to bottom is:
+        1. DATE/TIME row (SMALLEST digits at the very top) — e.g. "1-05", "21:05", "12/31". This row often contains a dash "-", colon ":", or slash "/". IGNORE THIS ROW COMPLETELY.
+        2. SYS row (LARGEST digits) — systolic blood pressure, typically 60–250.
+        3. DIA row (medium digits) — diastolic blood pressure, typically 30–150.
+        4. PUL row (smaller digits, near bottom) — pulse/heart rate, typically 40–200, often with "/min" or a heart icon.
+
+        CRITICAL: The top-most small numbers are ALWAYS date/time, NOT blood pressure. Do NOT read them as SYS. SYS is the LARGE number below the date/time row.
 
         Think step-by-step:
-        1. Identify the three separate numeric areas.
-        2. For each digit, carefully check which of the 7 segments are lit.
-        3. Be extra careful with similar shapes:
-           - 3 vs 8 vs 9 vs 6 vs 5
-           - 7 vs 1 vs 4
-           - 0 vs 8 vs 6 vs 9
-        4. Ignore any other text, icons, battery, date, AFIB, MAM, error symbols, cuffs, etc.
-        5. If a digit is unclear or partial, use the most likely shape.
+        1. First, locate and SKIP the date/time row at the very top (smallest text, may have "-" or ":").
+        2. Identify the three BP reading areas below it: SYS (largest), DIA (medium), PUL (smallest).
+        3. For each digit, carefully check which of the 7 segments are lit.
+        4. Be extra careful with similar shapes: 3/8/9/6/5, 7/1/4, 0/8/6/9.
+        5. Ignore all icons, battery, AFIB, MAM, error symbols, cuffs, etc.
 
         Output ONLY valid JSON, nothing else:
         {"SYS": integer or null, "DIA": integer or null, "PUL": integer or null}
