@@ -9,8 +9,8 @@ import SwiftUI
 import AVFoundation
 
 struct ContentView: View {
-    @StateObject private var camera = CameraManager()
-    @StateObject private var vlmManager = VLMManager()
+    @State private var camera = CameraManager()
+    @State private var vlmManager = VLMManager()
     @State private var description = ""
     @State private var statusMessage = ""
     @State private var isLoading = false
@@ -34,7 +34,7 @@ struct ContentView: View {
                 .padding()
                 .background(.ultraThinMaterial)
                 .cornerRadius(12)
-                .disabled(vlmManager.loadingProgress > 0 && vlmManager.loadingProgress < 1)
+                .disabled(vlmManager.loadingProgress > 0 && vlmManager.loadingProgress < 1 || vlmManager.isSwitching)
                 .onChange(of: vlmManager.selectedModel) { oldValue, newValue in
                     Task {
                         do {
@@ -138,6 +138,8 @@ struct ContentView: View {
                             } else {
                                 await MainActor.run { description = "Unable to read blood pressure." }
                             }
+                        } else {
+                            await MainActor.run { description = "Failed to capture image. Please check camera permissions." }
                         }
                         await MainActor.run {
                             statusMessage = ""
@@ -152,7 +154,7 @@ struct ContentView: View {
             }
         }
         .onAppear { 
-            camera.session.startRunning() 
+            camera.startSession()
             Task { 
                 do {
                     try await vlmManager.loadModel()
@@ -163,6 +165,6 @@ struct ContentView: View {
                 }
             }
         }
-        .onDisappear { camera.session.stopRunning() }
+        .onDisappear { camera.stopSession() }
     }
 }
