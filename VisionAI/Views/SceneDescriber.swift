@@ -58,26 +58,28 @@ final class SceneDescriber {
         onStatusUpdate?("📐 Resizing image...")
         
         let prompt = """
-        You are an expert at reading 7-segment LCD/LED displays from blood pressure monitors.
+        You are an expert at reading 7-segment LCD displays on blood pressure monitors.
 
-        The display layout from top to bottom is:
-        1. DATE/TIME row (SMALLEST digits at the very top) — e.g. "1-05", "21:05", "12/31". This row often contains a dash "-", colon ":", or slash "/". IGNORE THIS ROW COMPLETELY.
-        2. SYS row (LARGEST digits) — systolic blood pressure, typically 60–250.
-        3. DIA row (medium digits) — diastolic blood pressure, typically 30–150.
-        4. PUL row (smaller digits, near bottom) — pulse/heart rate, typically 40–200, often with "/min" or a heart icon.
+        Display layout (top to bottom):
+        - Date/Time row: SMALLEST digits at very top, contains "-" or ":" or "/". IGNORE this row completely.
+        - SYS: LARGEST digits, typically 60-250 (ALWAYS 2-3 digits).
+        - DIA: medium-sized digits, typically 30-150 (ALWAYS 2-3 digits).
+        - PUL: smallest digits at bottom, typically 40-200 (ALWAYS 2-3 digits).
 
-        CRITICAL: The top-most small numbers are ALWAYS date/time, NOT blood pressure. Do NOT read them as SYS. SYS is the LARGE number below the date/time row.
+        CRITICAL: The top-most tiny numbers are ALWAYS date/time. NEVER read them as blood pressure readings.
 
-        Think step-by-step:
-        1. First, locate and SKIP the date/time row at the very top (smallest text, may have "-" or ":").
-        2. Identify the three BP reading areas below it: SYS (largest), DIA (medium), PUL (smallest).
-        3. For each digit, carefully check which of the 7 segments are lit.
-        4. Be extra careful with similar shapes: 3/8/9/6/5, 7/1/4, 0/8/6/9.
-        5. Ignore all icons, battery, AFIB, MAM, error symbols, cuffs, etc.
+        IMPORTANT: Blood pressure values are ALWAYS 2-3 digits. If you see only 1 digit, you are reading the WRONG area - the display shows 2-3 digits. Check the LARGER digits below the date/time row.
 
-        Output ONLY valid JSON, nothing else:
-        {"SYS": integer or null, "DIA": integer or null, "PUL": integer or null}
-        Use null if cannot confidently read a value.
+        Step by step:
+        1. Locate and SKIP the date/time row at the very top (small numbers with "-" or ":").
+        2. Read the LARGE digits below as SYS (2-3 digits).
+        3. Read the medium digits as DIA (2-3 digits).
+        4. Read the small digits at bottom as PUL (2-3 digits).
+        5. Be careful with similar digits: 3/8/9, 7/1/4, 0/6/8.
+
+        Output ONLY valid JSON (no additional text):
+        {"SYS": integer, "DIA": integer, "PUL": integer}
+
         """
         
         onStatusUpdate?("🤖 Running AI inference...")
@@ -96,7 +98,17 @@ final class SceneDescriber {
         }
         
         let decoder = JSONDecoder()
-        let reading = try decoder.decode(BloodPressureReading.self, from: data)
+        var reading = try decoder.decode(BloodPressureReading.self, from: data)
+        
+        // 結果驗證：範圍檢查（與 voice mode 一致）
+        reading.SYS = validateRange(reading.SYS, min: 60, max: 250)
+        reading.DIA = validateRange(reading.DIA, min: 30, max: 150)
+        reading.PUL = validateRange(reading.PUL, min: 40, max: 200)
+        
+        // 如果所有值都不合理，拋出錯誤
+        if reading.SYS == nil && reading.DIA == nil && reading.PUL == nil {
+            throw NSError(domain: "SceneDescriber", code: 2, userInfo: [NSLocalizedDescriptionKey: "無法讀取有效的血壓數值"])
+        }
         
         return reading
     }

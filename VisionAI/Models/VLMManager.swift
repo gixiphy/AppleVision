@@ -201,9 +201,9 @@ final class VLMManager {
         
         onStatusUpdate?("📐 Resizing image...")
         
-        // 1. 影像預處理：調整大小、轉灰階並增加對比度，以利 OCR。
-        // 將最大尺寸降至 640px，兼顧文字清晰度與推論速度
-        let maxDimension: CGFloat = 640.0
+        // 1. 影像預處理：調整大小、增加對比度，以利 OCR。
+        // 將最大尺寸提升至 768px，提升 LCD 數字辨識度
+        let maxDimension: CGFloat = 768.0
         let size = image.size
         var resizedImage = image
         
@@ -218,6 +218,19 @@ final class VLMManager {
                 resizedImage = scaledImage
             }
             UIGraphicsEndImageContext()
+        }
+        
+        // 增加對比度以強化 LCD 數字與背景的區分度
+        if let ciImage = CIImage(image: resizedImage) {
+            let filter = CIFilter(name: "CIColorControls")
+            filter?.setValue(ciImage, forKey: kCIInputImageKey)
+            filter?.setValue(1.2, forKey: kCIInputContrastKey)  // 對比度 +20%
+            if let outputImage = filter?.outputImage {
+                let context = CIContext()
+                if let cgImage = context.createCGImage(outputImage, from: outputImage.extent) {
+                    resizedImage = UIImage(cgImage: cgImage)
+                }
+            }
         }
         
         onStatusUpdate?("🖼️ Converting to grayscale...")
