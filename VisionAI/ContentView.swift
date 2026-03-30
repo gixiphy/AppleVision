@@ -13,12 +13,15 @@ import FoundationModels
 enum InputMode: String, CaseIterable {
     case camera = "Camera"
     case voice = "Voice"
+    case conversation = "Conversation"
 }
 
 struct ContentView: View {
     @State private var camera = CameraManager()
     @State private var vlmManager = VLMManager()
     @State private var speechAnalyzer = SpeechAnalyzerManager()
+    @State private var conversationAnalyzer = ConversationAnalyzer()
+    @State private var conversationResult: ConversationResult?
     @State private var description = ""
     @State private var statusMessage = ""
     @State private var isLoading = false
@@ -204,6 +207,15 @@ struct ContentView: View {
                         .controlSize(.large)
                         .disabled(isLoading)
                     }
+                    .padding()
+                }
+                
+                // Conversation 模式 UI
+                if inputMode == .conversation {
+                    ConversationModeView(
+                        analyzer: conversationAnalyzer,
+                        result: $conversationResult
+                    )
                     .padding()
                 }
 
@@ -434,6 +446,201 @@ struct GuideRow: View {
             Text(text)
                 .font(.callout)
                 .foregroundColor(.primary)
+        }
+    }
+}
+
+// MARK: - Conversation Mode View
+
+struct ConversationModeView: View {
+    @Bindable var analyzer: ConversationAnalyzer
+    @Binding var result: ConversationResult?
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            if analyzer.isRecording {
+                VStack {
+                    Image(systemName: "mic.fill")
+                        .font(.largeTitle)
+                        .foregroundColor(.red)
+                        .scaleEffect(CGFloat(1.0 + Double(analyzer.audioLevel) * 2))
+                        .animation(.easeInOut(duration: 0.1).repeatForever(autoreverses: true), value: analyzer.audioLevel)
+                    Text("Recording conversation...")
+                        .font(.headline)
+                }
+                
+                Text("Tap Stop to analyze patient mood")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            } else if analyzer.isProcessing {
+                VStack(spacing: 8) {
+                    ProgressView()
+                    Text(analyzer.processingStatus)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            } else if let result = result {
+                ConversationResultCard(result: result)
+            } else {
+                ConversationInputGuide()
+            }
+            
+            if let error = analyzer.errorMessage {
+                Text(error)
+                    .font(.caption)
+                    .foregroundColor(.red)
+            }
+            
+            Button {
+                Task {
+                    if analyzer.isRecording {
+                        await analyzer.stopRecording()
+                        if let r = try? await analyzer.analyzeConversation() {
+                            result = r
+                        }
+                    } else {
+                        do {
+                            try await analyzer.startRecording()
+                        } catch {
+                            analyzer.errorMessage = error.localizedDescription
+                        }
+                    }
+                }
+            } label: {
+                Label(
+                    analyzer.isRecording ? "Stop & Analyze" : "Start Recording",
+                    systemImage: analyzer.isRecording ? "stop.fill" : "mic.fill"
+                )
+            }
+            .buttonStyle(.glass)
+            .controlSize(.large)
+            .disabled(analyzer.isProcessing)
+        }
+    }
+}
+
+// MARK: - Conversation Input Guide
+
+struct ConversationInputGuide: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "bubble.left.and.bubble.right.fill")
+                .font(.system(size: 40))
+                .foregroundColor(.secondary)
+            
+            Text("Record Conversation")
+                .font(.headline)
+            Text("Talk naturally with patient")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            
+            Divider().padding(.horizontal)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                GuideRow(text: "Records full conversation")
+                GuideRow(text: "Identifies patient vs nurse")
+                GuideRow(text: "Analyzes patient mood")
+                GuideRow(text: "Extracts vital signs")
+            }
+            
+            Text("Supports: Blood pressure / Blood sugar / Temperature / SpO2")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding()
+        .background(.ultraThinMaterial)
+        .cornerRadius(16)
+    }
+}
+
+// MARK: - Conversation Result Card
+
+struct ConversationResultCard: View {
+    let result: ConversationResult
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            // 患者心情
+            if let mood = result.patientMood {
+                HStack(spacing: 12) {
+                    Image(systemName: moodIcon(for: mood))
+                        .font(.title)
+                        .foregroundColor(moodColor(for: mood))
+                    VStack(alignment: .leading) {
+                        Text("Patient Mood")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        HStack {
+                            Text(mood)
+                                .font(.headline)
+                            if let confidence = result.moodConfidence, confidence > 0 {
+                                Text("\(Int(confidence * 100))%")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    Spacer()
+                }
+                .padding()
+                .background(moodColor(for: mood).opacity(0.1))
+                .cornerRadius(12)
+            }
+            
+            // 生命徵象
+            if let vs = result.vitalSigns, hasAnyValue(vs) {
+                VitalSignsCard(vitalSigns: vs)
+            }
+            
+            // 對話紀錄
+            if !result.fullTranscript.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Transcript")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    ScrollView {
+                        Text(result.fullTranscript)
+                            .font(.callout)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .frame(maxHeight: 150)
+                }
+                .padding()
+                .background(.ultraThinMaterial)
+                .cornerRadius(12)
+            }
+            
+            // 錯誤訊息
+            if let error = result.moodReasoning, !error.isEmpty {
+                Text(error)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+    
+    private func moodIcon(for mood: String) -> String {
+        switch mood {
+        case "平穩": return "face.smiling"
+        case "開心": return "face.smiling.inverse"
+        case "焦慮": return "face.smiling"
+        case "疲倦": return "zzz"
+        case "不安": return "exclamationmark.triangle"
+        case "積極": return "hand.thumbsup"
+        case "混亂": return "questionmark.circle"
+        case "煩躁": return "xmark.circle"
+        default: return "person.fill"
+        }
+    }
+    
+    private func moodColor(for mood: String) -> Color {
+        switch mood {
+        case "平穩", "開心", "積極": return .green
+        case "焦慮", "不安", "混亂": return .orange
+        case "疲倦": return .blue
+        case "煩躁": return .red
+        default: return .secondary
         }
     }
 }

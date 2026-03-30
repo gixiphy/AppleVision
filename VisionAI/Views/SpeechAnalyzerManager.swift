@@ -2,7 +2,7 @@
 //  SpeechAnalyzerManager.swift
 //  Vision AI
 //
-//  SpeechAnalyzer + VoiceAnalytics for iOS 26+
+//  SpeechAnalyzer for iOS 26+
 //
 
 import Foundation
