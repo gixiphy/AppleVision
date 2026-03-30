@@ -42,24 +42,26 @@ struct ContentView: View {
             }
 
             VStack {
-                // 模型選擇器 (置頂)
-                Picker("Model", selection: $vlmManager.selectedModel) {
-                    ForEach(SupportedModel.allCases) { model in
-                        Text(model.rawValue).tag(model)
+                // 模型選擇器 (僅 Camera 模式顯示)
+                if inputMode == .camera {
+                    Picker("Model", selection: $vlmManager.selectedModel) {
+                        ForEach(SupportedModel.allCases) { model in
+                            Text(model.rawValue).tag(model)
+                        }
                     }
-                }
-                .pickerStyle(.menu)
-                .padding()
-                .background(.ultraThinMaterial)
-                .cornerRadius(12)
-                .disabled(vlmManager.loadingProgress > 0 && vlmManager.loadingProgress < 1 || vlmManager.isSwitching)
-                .onChange(of: vlmManager.selectedModel) { oldValue, newValue in
-                    Task {
-                        do {
-                            try await vlmManager.switchModel(to: newValue)
-                        } catch {
-                            print("❌ 模型載入失敗：\(error)")
-                            description = "模型載入失敗：\(error.localizedDescription)"
+                    .pickerStyle(.menu)
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(12)
+                    .disabled(vlmManager.loadingProgress > 0 && vlmManager.loadingProgress < 1 || vlmManager.isSwitching)
+                    .onChange(of: vlmManager.selectedModel) { oldValue, newValue in
+                        Task {
+                            do {
+                                try await vlmManager.switchModel(to: newValue)
+                            } catch {
+                                print("❌ 模型載入失敗：\(error)")
+                                description = "模型載入失敗：\(error.localizedDescription)"
+                            }
                         }
                     }
                 }
