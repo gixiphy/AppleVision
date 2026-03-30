@@ -18,7 +18,7 @@ enum InputMode: String, CaseIterable {
 struct ContentView: View {
     @State private var camera = CameraManager()
     @State private var vlmManager = VLMManager()
-    @State private var speechRecognizer = SpeechRecognizer()
+    @State private var speechAnalyzer = SpeechAnalyzerManager()
     @State private var description = ""
     @State private var statusMessage = ""
     @State private var isLoading = false
@@ -106,12 +106,12 @@ struct ContentView: View {
                 // 語音模式 UI
                 if inputMode == .voice {
                     VStack(spacing: 16) {
-                        if speechRecognizer.isListening {
+                        if speechAnalyzer.isListening {
                             VStack {
                                 Image(systemName: "mic.fill")
                                     .font(.largeTitle)
                                     .foregroundColor(.red)
-                                    .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: speechRecognizer.isListening)
+                                    .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: speechAnalyzer.isListening)
                                 Text("Listening...")
                                     .font(.headline)
                             }
@@ -124,13 +124,13 @@ struct ContentView: View {
                                         .foregroundColor(.secondary)
                                 }
                             }
-                        } else if speechRecognizer.transcribedText.isEmpty && vitalSigns == nil {
+                        } else if speechAnalyzer.transcribedText.isEmpty && vitalSigns == nil {
                             VoiceInputGuide()
                         }
                         
-                        if !speechRecognizer.transcribedText.isEmpty {
+                        if !speechAnalyzer.transcribedText.isEmpty {
                             ScrollView {
-                                Text(speechRecognizer.transcribedText)
+                                Text(speechAnalyzer.transcribedText)
                                     .font(.callout)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
@@ -140,7 +140,7 @@ struct ContentView: View {
                             .cornerRadius(12)
                         }
                         
-                        if let error = speechRecognizer.errorMessage {
+                        if let error = speechAnalyzer.errorMessage {
                             Text(error)
                                 .font(.caption)
                                 .foregroundColor(.red)
@@ -148,11 +148,11 @@ struct ContentView: View {
                         
                         Button {
                             Task {
-                                if speechRecognizer.isListening {
-                                    speechRecognizer.stopListening()
+                                if speechAnalyzer.isListening {
+                                    await speechAnalyzer.stopListening()
                                     
                                     // 檢查是否有任何辨識文字
-                                    let text = speechRecognizer.transcribedText.trimmingCharacters(in: .whitespacesAndNewlines)
+                                    let text = speechAnalyzer.transcribedText.trimmingCharacters(in: .whitespacesAndNewlines)
                                     guard !text.isEmpty else {
                                         description = "No speech detected. Please try again."
                                         return
@@ -191,14 +191,14 @@ struct ContentView: View {
                                     bpReading = nil
                                     description = ""
                                     do {
-                                        try await speechRecognizer.startListening()
+                                        try await speechAnalyzer.startListening()
                                     } catch {
                                         description = "Failed to start speech recognition: \(error.localizedDescription)"
                                     }
                                 }
                             }
                         } label: {
-                            Label(speechRecognizer.isListening ? "Stop" : "Start Voice Input", systemImage: speechRecognizer.isListening ? "stop.fill" : "mic.fill")
+                            Label(speechAnalyzer.isListening ? "Stop" : "Start Voice Input", systemImage: speechAnalyzer.isListening ? "stop.fill" : "mic.fill")
                         }
                         .buttonStyle(.glass)
                         .controlSize(.large)
@@ -303,7 +303,12 @@ struct ContentView: View {
                     description = "模型載入失敗：\(error.localizedDescription)"
                 }
                 
-                let _ = await speechRecognizer.requestAuthorization()
+                do {
+                    try await speechAnalyzer.initialize()
+                } catch {
+                    print("❌ SpeechAnalyzer 初始化失敗：\(error)")
+                    description = "SpeechAnalyzer 初始化失敗：\(error.localizedDescription)"
+                }
             }
         }
         .onDisappear { camera.stopSession() }
