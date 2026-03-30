@@ -11,18 +11,6 @@ import AVFoundation
 import CoreMedia
 import Observation
 
-// MARK: - VoiceAnalytics 情緒結果
-struct VoiceEmotionResult: Codable {
-    var overallMood: String
-    var energy: String
-    var stability: String
-    var confidence: Double
-    
-    var rawPitch: Double?
-    var rawJitter: Double?
-    var rawShimmer: Double?
-}
-
 // MARK: - Speech Analyzer Manager
 @Observable
 @MainActor
@@ -33,8 +21,6 @@ final class SpeechAnalyzerManager {
     var isListening: Bool = false
     var isInitialized: Bool = false
     var errorMessage: String?
-    var voiceEmotionResult: VoiceEmotionResult?
-    // var speechExpressionResult: SpeechExpressionResult?  // 預留接口
     
     // MARK: - Private Components
     private var analyzer: SpeechAnalyzer?
@@ -132,7 +118,6 @@ final class SpeechAnalyzerManager {
         
         // 重置狀態
         transcribedText = ""
-        voiceEmotionResult = nil
         errorMessage = nil
         
         // 啟動結果監聽 Task
@@ -144,17 +129,6 @@ final class SpeechAnalyzerManager {
                     
                     // 更新文字
                     self.transcribedText = text
-                    
-                    // MARK: - VoiceAnalytics 情緒分析（預留）
-                    // SpeechTranscriber.Result 可能需要配置特定選項才能取得 voice analytics
-                    // 這裡預留接口，未來可以通過 result.metadata 取得
-                    // if let metadata = result.metadata {
-                    //     for segment in metadata {
-                    //         if let voiceAnalytics = segment.voiceAnalytics {
-                    //             // 分析情緒
-                    //         }
-                    //     }
-                    // }
                 }
             } catch {
                 self.errorMessage = error.localizedDescription
@@ -220,72 +194,6 @@ final class SpeechAnalyzerManager {
         isListening = false
     }
     
-    // MARK: - VoiceAnalytics 情緒分析實現（預留方法）
-    // 未來可以從 SpeechTranscriber.Result 的 metadata 中取得 voice analytics
-    private func analyzeVoiceEmotion(
-        pitch: Double,
-        jitter: Double,
-        shimmer: Double,
-        voicing: Double
-    ) -> VoiceEmotionResult {
-        // 閾值（需根據實際數據調整）
-        let jitterThreshold: Double = 0.03   // 3%
-        let shimmerThreshold: Double = 0.5   // 0.5 dB
-        
-        // 判斷能量（基於 jitter）
-        let energy: String
-        if jitter > jitterThreshold * 1.5 {
-            energy = "high"
-        } else if jitter < jitterThreshold * 0.5 {
-            energy = "low"
-        } else {
-            energy = "normal"
-        }
-        
-        // 判斷穩定性（基於 shimmer）
-        let stability: String
-        if shimmer > shimmerThreshold * 1.5 {
-            stability = "unstable"
-        } else if shimmer < shimmerThreshold * 0.5 {
-            stability = "stable"
-        } else {
-            stability = "moderate"
-        }
-        
-        // 判斷整體情緒
-        let overallMood: String
-        if jitter > jitterThreshold * 2 && shimmer > shimmerThreshold * 2 {
-            overallMood = "焦慮"
-        } else if energy == "low" && stability == "stable" {
-            overallMood = "平靜"
-        } else if energy == "low" {
-            overallMood = "疲倦"
-        } else if stability == "unstable" {
-            overallMood = "不安"
-        } else if voicing > 0.8 && energy == "high" {
-            overallMood = "積極"
-        } else {
-            overallMood = "正常"
-        }
-        
-        // 計算置信度（基於數據完整性）
-        let confidence: Double
-        if voicing > 0.5 && jitter >= 0 && shimmer >= 0 {
-            confidence = 0.8
-        } else {
-            confidence = 0.5
-        }
-        
-        return VoiceEmotionResult(
-            overallMood: overallMood,
-            energy: energy,
-            stability: stability,
-            confidence: confidence,
-            rawPitch: pitch,
-            rawJitter: jitter,
-            rawShimmer: shimmer
-        )
-    }
 }
 
 // MARK: - 錯誤類型
