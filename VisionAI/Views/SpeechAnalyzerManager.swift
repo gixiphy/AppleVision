@@ -3,7 +3,6 @@
 //  Vision AI
 //
 //  SpeechAnalyzer + VoiceAnalytics for iOS 26+
-//  預留 SRSpeechExpression 接口
 //
 
 import Foundation
@@ -22,16 +21,6 @@ struct VoiceEmotionResult: Codable {
     var rawPitch: Double?
     var rawJitter: Double?
     var rawShimmer: Double?
-}
-
-// MARK: - SRSpeechExpression 結果（預留 - 僅供技術驗證）
-// ⚠️ 需要 Apple 研究用途授權，無法上架 App Store
-struct SpeechExpressionResult: Codable {
-    var valence: Double?
-    var activation: Double?
-    var dominance: Double?
-    var mood: Double?
-    var confidence: Double?
 }
 
 // MARK: - Speech Analyzer Manager
@@ -297,31 +286,6 @@ final class SpeechAnalyzerManager {
             rawShimmer: shimmer
         )
     }
-    
-    // MARK: - SRSpeechExpression 接口（僅供技術驗證 / Technical Testing Only）
-    // ================================================================================
-    // ⚠️ 重要提醒 / IMPORTANT:
-    // - SRSpeechExpression 來自 SensorKit 框架
-    // - 使用需要 Apple 研究用途授權 (com.apple.developer.sensorkit.reader.allow)
-    // - 僅供技術驗證 (Technical Verification) 使用
-    // - 無法上架 App Store (會被拒絕)
-    //
-    // 使用方式 / Usage:
-    // 1. 需要向 Apple 提交研究計劃並獲得批准
-    // 2. 在 entitlements 中新增 com.apple.developer.sensorkit.reader.allow
-    // 3. 從 SRSpeechMetrics 取得 speechExpression
-    //
-    // @available(iOS 26, *)
-    // func analyzeSpeechExpression(_ expression: SRSpeechExpression) -> SpeechExpressionResult {
-    //     return SpeechExpressionResult(
-    //         valence: expression.valence,
-    //         activation: expression.activation,
-    //         dominance: expression.dominance,
-    //         mood: expression.mood,
-    //         confidence: expression.confidence
-    //     )
-    // }
-    // ================================================================================
 }
 
 // MARK: - 錯誤類型
